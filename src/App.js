@@ -11,7 +11,7 @@ import * as Comlink from 'comlink';
 import './App.css';
 /* eslint-disable import/no-webpack-loader-syntax */
 import Worker from 'worker-loader!./worker';
-import {useAsync} from './utils';
+import {formatTime} from './utils';
 
 const styles = {
   container:  {
@@ -77,11 +77,55 @@ const Dropzone = ({ setVideoFile }) => {
 
 
 const processVideo = async (videoFile, videoDuration) => {
-  const worker = new Worker();
-  const ffmpegjs = await Comlink.proxy(worker);
-  console.log(videoFile, videoDuration);
+  const worker = new Worker("./worker.js");
+  const ffmpeg = await Comlink.wrap(worker);
+  console.log("Ffmpeg", ffmpeg);
+  const fileContent = await videoFile.arrayBuffer();  
+  let results = [];
+  let counter = 1;
+  const [videoName, ext] = videoFile.name.split(".");
+  console.log(videoFile, videoDuration, videoName, ext);
+  for(let i = 0; i < videoDuration; i += 15) {
+    const startTime = formatTime(i);
+    const endTime = formatTime(i + 15);
+    const outputFileName = `${videoName}-${counter}.${ext}`
+    const result = await ffmpeg({
+      MEMFS: [{ name: videoFile.name, data: fileContent }],
+      arguments: ["-i", videoFile.name, "-ss", startTime, "-to", endTime, "-c", "copy", outputFileName] 
+    });
+    console.log(result);
+    const outputFile = result.MEMFS[0];
+    console.log(`Processed from ${startTime} to ${endTime}`);
+    saveFile(outputFile.name, new Blob([outputFile.data]));
+    counter += 1;
+  }
+  return results;  
 }
 
+function saveFile (name, blob) {
+  if (blob !== null && navigator.msSaveBlob) {    
+    return navigator.msSaveBlob(new Blob(blob), name);
+  }
+ 
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("style", 'display: none;');
+  a.setAttribute('href', url);
+  a.setAttribute('download', name);
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);  
+  document.body.removeChild(a);
+}
+
+
+
+// const processVideo = async () => {
+//   const worker = new Worker("./worker.js");
+//   const obj = await Comlink.wrap(worker);
+//   await obj.inc();
+//   console.log(`Obj count is ${await obj.count}`);
+// }
  
 function App() {
   const [videoFile, setVideoFile] = useState(null);
@@ -96,6 +140,7 @@ function App() {
   }, [videoFile, videoDuration]);
 
   const mediaPlayerReady = useCallback(() => {
+    console.log("Media Player Ready", mediaPlayerRef.getDuration());
     setVideoDuration(mediaPlayerRef.getDuration());
   }, [mediaPlayerRef]);
   
