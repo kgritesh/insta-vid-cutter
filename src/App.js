@@ -1,172 +1,80 @@
+import React, { useState } from "react";
+import styled, { ThemeProvider } from "styled-components";
+import { Container } from "react-bootstrap";
 
-import React, { useState, useCallback } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import Button from 'react-bootstrap/Button';
-import Spinner from 'react-bootstrap/Spinner';
-import {useDropzone} from 'react-dropzone';
-import ReactPlayer from 'react-player'
-import * as Comlink from 'comlink';
+import Dropzone from "./components/Dropzone";
+import VideoDetails from "./components/VideoDetails";
 
+import theme from "./theme";
 
-import './App.css';
-/* eslint-disable import/no-webpack-loader-syntax */
-import Worker from 'worker-loader!./worker';
-import {formatTime} from './utils';
+const StyledContainer = styled(Container)`
+  max-width: 960px;
+  height: 100%;
+  background-color: ${(props) => props.theme.colors.background}
+  display: flex;
+  flex-direction: column;
+  font-family: Open Sans,sans-serif;
+`;
 
-const styles = {
-  container:  {
-    display: "flex",
-    flexDirection: "column",
-    fontFamily: "sans-serif",
-    marginTop: "20px"
-  },
+const NavBar = styled.div`
+  height: 100px;
+`;
 
-  flexDiv: {
-    display: "flex",
-    flexDirection: "column",    
-  },
+const Header = styled.div`
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+`;
 
-  player: {
-    backgroundColor: "#fafafa"
-  },
+const Title = styled.h1`
+  font-size: ${(props) => props.theme.textSize.xLarge};
+  font-weight: 800;
+  justify-content: center;
+  color: ${(props) => props.theme.colors.main};
+  text-align: center;
+  margin: 10px;
+  font-family: Raleway, sans-serif;
+`;
 
-  dropzone: {    
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: 20,
-    borderWidth: 2,
-    borderRadius: 2,
-    borderColor: "#eeeeee",
-    borderStyle: "dashed",
-    backgroundColor: "#fafafa",
-    color: "#bdbdbd",
-    outline: "none",
-    transition: "border .24s ease-in-out",
-    marginTop: 10,
-    marginBottom: 10 
-  },
+const SubTitle = styled.h2`
+  font-size: ${(props) => props.theme.textSize.medium};
+  font-weight: 500;
+  text-align: center;
+  justify-content: center;
+  color: ${(props) => props.theme.colors.main};
+  margin: 10px;
+`;
 
-  submitBtn: {
-    alignItems: "center",
-    marginTop: 10
-  }
-};
-
-const Dropzone = ({ setVideoFile }) => { 
-
-  const onDrop = useCallback(files => {
-    console.log(setVideoFile, files);
-    setVideoFile(files[0]);
-  }, [setVideoFile]);
-  
-  const {getRootProps, getInputProps} = useDropzone({
-    multiple: false,
-    accept: 'video/*',
-    onDrop
-  });
- 
-  return (
-    <div {...getRootProps({style: styles.dropzone})}>
-      <input {...getInputProps() } />
-      <p>Drag 'n' drop some files here, or click to select files</p>
-    </div>
-  );    
-};
-
-
-const processVideo = async (videoFile, videoDuration) => {
-  const worker = new Worker("./worker.js");
-  const ffmpeg = await Comlink.wrap(worker);
-  console.log("Ffmpeg", ffmpeg);
-  const fileContent = await videoFile.arrayBuffer();  
-  let results = [];
-  let counter = 1;
-  const [videoName, ext] = videoFile.name.split(".");
-  console.log(videoFile, videoDuration, videoName, ext);
-  for(let i = 0; i < videoDuration; i += 15) {
-    const startTime = formatTime(i);
-    const endTime = formatTime(i + 15);
-    const outputFileName = `${videoName}-${counter}.${ext}`
-    const result = await ffmpeg({
-      MEMFS: [{ name: videoFile.name, data: fileContent }],
-      arguments: ["-i", videoFile.name, "-ss", startTime, "-to", endTime, "-c", "copy", outputFileName] 
-    });
-    console.log(result);
-    const outputFile = result.MEMFS[0];
-    console.log(`Processed from ${startTime} to ${endTime}`);
-    saveFile(outputFile.name, new Blob([outputFile.data]));
-    counter += 1;
-  }
-  return results;  
-}
-
-function saveFile (name, blob) {
-  if (blob !== null && navigator.msSaveBlob) {    
-    return navigator.msSaveBlob(new Blob(blob), name);
-  }
- 
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.setAttribute("style", 'display: none;');
-  a.setAttribute('href', url);
-  a.setAttribute('download', name);
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);  
-  document.body.removeChild(a);
-}
-
-
-
-// const processVideo = async () => {
-//   const worker = new Worker("./worker.js");
-//   const obj = await Comlink.wrap(worker);
-//   await obj.inc();
-//   console.log(`Obj count is ${await obj.count}`);
-// }
- 
-function App() {
+const App = () => {
   const [videoFile, setVideoFile] = useState(null);
-  const [videoDuration, setVideoDuration] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [mediaPlayerRef, setMediaPlayer] = useState(null);
+  const onCancel = () => setVideoFile(null);
+  const onVideoUploaded = (videoBlob) => {
+    setVideoFile({
+      name: videoBlob.name,
+      data: videoBlob,
+      url: URL.createObjectURL(videoBlob),
+    });
+  };
 
-  const initiateVideoProcessing = useCallback(async () => {
-    setProcessing(true);
-    await processVideo(videoFile, videoDuration);
-    setProcessing(false);
-  }, [videoFile, videoDuration]);
-
-  const mediaPlayerReady = useCallback(() => {
-    console.log("Media Player Ready", mediaPlayerRef.getDuration());
-    setVideoDuration(mediaPlayerRef.getDuration());
-  }, [mediaPlayerRef]);
-  
   return (
-    <div className="App">
-      <header className="App-header">
-	Split Video For Instagram Story
-	<div style={styles.container}>
-	  <Dropzone setVideoFile={setVideoFile} />
-	  { videoFile &&
-	    <div style={styles.flexDiv}>
-	      <ReactPlayer
-		ref={setMediaPlayer}
-		url={URL.createObjectURL(videoFile)}
-		style={styles.player}
-		light controls
-		onReady={mediaPlayerReady}
-	      />
-	      <Button variant="primary" onClick={initiateVideoProcessing}>Submit</Button>
-              {processing && <Spinner animation="border" /> }
-	    </div>
-	  }
-	</div>	
-      </header>	
-    </div>
+    <ThemeProvider theme={theme}>
+      <StyledContainer fluid>
+        <NavBar />
+        <Header>
+          <Title> Split Video </Title>
+          <SubTitle>
+            {" "}
+            Split video into multiple 15 second clips for instagram story{" "}
+          </SubTitle>
+        </Header>
+        {videoFile === null ? (
+          <Dropzone setVideoFile={onVideoUploaded} />
+        ) : (
+          <VideoDetails videoFile={videoFile} onCancel={onCancel} />
+        )}
+      </StyledContainer>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
