@@ -10,4 +10,8 @@ export const BorderedDiv = styled.div`
   background-color: ${props => props.theme.colors.blueBackground};
   color: ${props => props.theme.colors.light};
   transition: "border .24s ease-in-out";  
+`;
+
+export const HorizontalDivider = styled.hr`
+ background-color: #333;
 `
