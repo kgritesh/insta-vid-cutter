@@ -1,18 +1,17 @@
 import React, { useState } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import { Container } from "react-bootstrap";
-import Navbar from "react-bootstrap/Navbar";
 
 import Dropzone from "./components/Dropzone";
 import VideoDetails from "./components/VideoDetails";
 import logo from "./img/logoHeader.svg";
 import logoIcon from "./img/logoIcon.svg";
 import { HorizontalDivider } from "./common/styles";
+import GithubRibbon from "./components/GithubRibbon";
 
 import theme from "./theme";
 
 const StyledContainer = styled(Container)`
-  max-width: 960px;
   height: 100vh;
   background-color: ${(props) => props.theme.colors.background}
   display: flex;
@@ -28,13 +27,13 @@ const NavBar = styled.div`
 `;
 
 const LogoIcon = styled.img`
-  margin-top: 10px;
-  height: 50px;
+  margin-top: 15px;
+  height: 30px;
 `;
 const LogoHeader = styled.img`
   margin-top: 30px;
   padding-left: 10px;
-  height: 50px;
+  height: 20px;
 `;
 
 const Header = styled.div`
@@ -67,12 +66,6 @@ const SubTitle = styled.h2`
   margin: 10px;
 `;
 
-const GithubRibbon = styled.a`
-  &:before {
-    background-color: #333;
-  }
-`;
-
 const Footer = styled.div`
   color: ${(props) => props.theme.colors.footerText};
   font-size: ${(props) => props.theme.textSize.small};
@@ -97,7 +90,7 @@ const App = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <StyledContainer fluid>
+      <StyledContainer>
         <NavBar>
           <div>
             <LogoIcon src={logoIcon} alt="" />
@@ -105,9 +98,7 @@ const App = () => {
           </div>
         </NavBar>
         <GithubRibbon
-          className="github-fork-ribbon"
-          href="https://github.com/kgritesh/insta-vid-cutter"
-          data-ribbon="Fork me on GitHub"
+          url="https://github.com/kgritesh/insta-vid-cutter"
           title="Fork me on GitHub"
         >
           Fork me on GitHub
