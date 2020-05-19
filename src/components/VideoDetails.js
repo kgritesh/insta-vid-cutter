@@ -31,6 +31,10 @@ const WrapperDiv = styled.div`
   display: flex;
   margin-bottom: 30px;
   width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const ChildDiv = styled.div`
