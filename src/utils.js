@@ -46,3 +46,10 @@ export function formatTime(time) {
   ret += "" + secs;
   return ret;
 }
+
+export const extractNameAndExt = (file) => {
+  return [
+    file.substr(0, file.lastIndexOf(".")),
+    file.substr(file.lastIndexOf(".") + 1, file.length),
+  ];
+};

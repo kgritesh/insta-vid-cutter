@@ -10,6 +10,7 @@ import { saveAs } from "file-saver";
 
 import VideoPlayer from "./VideoPlayer";
 import { BorderedDiv } from "../common/styles";
+import { extractNameAndExt } from "../utils";
 
 /* eslint import/no-webpack-loader-syntax: off */
 import Worker from "worker-loader!../worker";
@@ -76,7 +77,7 @@ async function* splitVideo(videoFile, duration) {
   const worker = new Worker("../worker.js");
   const ffmpeg = await Comlink.wrap(worker);
   const fileContent = await videoFile.data.arrayBuffer();
-  const [videoName, ext] = videoFile.name.split(".");
+  const [videoName, ext] = extractNameAndExt(videoFile.name);
   let counter = 1;
   for (let i = 0; i < duration; i += 15) {
     const startTime = formatTime(i);
